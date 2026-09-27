@@ -23,6 +23,9 @@ SEED = [
     dict(patient_name="Tom Becker", patient_ref="PT-2048", medication="Amlodipine 5mg",
          channel="portal", days_left=1,
          raw_request="Refill request. Note is garbled, no clear reason captured from the intake system."),
+    dict(patient_name="Nadia Rahman", patient_ref="PT-5527", medication="Warfarin 5mg",
+         channel="fax", days_left=2,
+         raw_request="Prior auth required, PBM says not covered without step therapy. Patient also hasn't been seen, annual visit / office visit required before renewal."),
 ]
 
 

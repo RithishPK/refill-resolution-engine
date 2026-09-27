@@ -116,6 +116,18 @@ function classify(raw) {
       reasoning: "No clear signal in the inbound request. Reason unclear, routing to a human to triage instead of guessing." };
   }
   const blocker = keys.reduce((a, b) => (scores[b] > scores[a] ? b : a));
+  // Contradictory signals: two STRONG blockers that point to DIFFERENT resolution
+  // paths. We do not guess between them - we route to a human.
+  const strong = keys.filter((b) => scores[b] >= 2);
+  const strongActions = new Set(strong.map((b) => BLOCKER_NEXT_ACTION[b]));
+  if (strongActions.size >= 2) {
+    const primaryAction = BLOCKER_NEXT_ACTION[blocker];
+    const other = strong.find((b) => BLOCKER_NEXT_ACTION[b] !== primaryAction);
+    const nameA = BLOCKER_PHRASE[blocker] || blocker.replace(/_/g, " ");
+    const nameB = BLOCKER_PHRASE[other] || (other || "").replace(/_/g, " ");
+    return { blocker, confidence: 0.4, conflict: true,
+      reasoning: `Conflicting signals: the request points to both ${nameA} and ${nameB}. Routing to a human rather than guessing.` };
+  }
   const top = scores[blocker];
   const cleanWin = Object.values(scores).filter((s) => s === top).length === 1;
   const confidence = Math.min(0.95, 0.5 + 0.13 * top + (cleanWin ? 0.12 : 0));
@@ -190,6 +202,7 @@ const SEED = [
   { patient_name: "David Kim", patient_ref: "PT-3055", medication: "Adderall XR 20mg", channel: "portal", days_left: 4, raw_request: "Prior auth required. PBM says step therapy / not covered without documentation. Controlled substance." },
   { patient_name: "Priya Nair", patient_ref: "PT-6612", medication: "Levothyroxine 75mcg", channel: "erx", days_left: 9, raw_request: "Provider wants recent labs / clinical review (TSH) before authorizing continued refills." },
   { patient_name: "Tom Becker", patient_ref: "PT-2048", medication: "Amlodipine 5mg", channel: "portal", days_left: 1, raw_request: "Refill request. Note is garbled, no clear reason captured from the intake system." },
+  { patient_name: "Nadia Rahman", patient_ref: "PT-5527", medication: "Warfarin 5mg", channel: "fax", days_left: 2, raw_request: "Prior auth required, PBM says not covered without step therapy. Patient also hasn't been seen, annual visit / office visit required before renewal." },
 ];
 
 function seed() {

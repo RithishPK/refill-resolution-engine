@@ -48,6 +48,19 @@ def classify(raw: str) -> dict:
             "reasoning": "No clear signal in the inbound request. Reason unclear, routing to a human to triage instead of guessing.",
         }
     blocker = max(scores, key=scores.get)
+    # Contradictory signals: two STRONG blockers pointing to DIFFERENT resolution
+    # paths. We do not guess between them - we route to a human.
+    strong = [b for b, sc in scores.items() if sc >= 2]
+    strong_actions = {BLOCKER_NEXT_ACTION.get(Blocker(b)) for b in strong}
+    if len(strong_actions) >= 2:
+        primary_action = BLOCKER_NEXT_ACTION.get(Blocker(blocker))
+        other = next((b for b in strong if BLOCKER_NEXT_ACTION.get(Blocker(b)) != primary_action), None)
+        name_a = BLOCKER_PHRASE.get(blocker, blocker.replace("_", " "))
+        name_b = BLOCKER_PHRASE.get(other, (other or "").replace("_", " "))
+        return {
+            "blocker": blocker, "confidence": 0.4,
+            "reasoning": f"Conflicting signals: the request points to both {name_a} and {name_b}. Routing to a human rather than guessing.",
+        }
     top = scores[blocker]
     clean_win = sum(1 for s in scores.values() if s == top) == 1
     confidence = round(min(0.95, 0.5 + 0.13 * top + (0.12 if clean_win else 0.0)), 2)

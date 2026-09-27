@@ -91,7 +91,10 @@ The system is built to stop rather than guess. In `orchestrator.py`, if triage
 produces a confidence below 0.5 (for example, a garbled intake note with no clear
 signal), the case is routed to `needs_human` instead of being auto-advanced. The
 classifier in `brain.py` labels an unreadable request `unknown` with a low confidence
-and an honest reason, rather than inventing a specific blocker. This is the "uncertainty and
+and an honest reason, rather than inventing a specific blocker. When two strong but
+conflicting signals are present (for example, both a prior-authorization cue and a
+visit-required cue), the request is flagged as a conflict and routed to a human instead
+of picking one path arbitrarily. This is the "uncertainty and
 failure" behaviour the rubric asks for: when the input is incomplete or contradictory,
 the correct action is to escalate, not to act.
 
@@ -123,6 +126,21 @@ Nothing the system does is a black box. Every case shows its `reasoning` (why th
 blocker) and a `confidence` score, and every action appends an audit event with the
 actor and the transition. A supervisor can read the timeline top to bottom and see who
 did what, when, and why the case is where it is.
+
+### Track 02, point by point
+
+An honest mapping of the intelligence rubric to what is built, including where a
+criterion is partial and what the next step would be.
+
+| Criterion | How the system addresses it |
+|---|---|
+| **Systems thinking** | A stuck refill is an explicit state machine (`states.py`): states, legal transitions, and branches for `denied` and `needs_human`. The messy problem is broken into states, dependencies, and actions. |
+| **AI judgment** | Deterministic rules do the safety-critical classification; the LLM is optional and confined to messy-language interpretation, summaries, and drafts. AI never touches authorization or state. Knowing where AI does not belong is the judgment. |
+| **Context & memory** | Each case carries its decision context (blocker, confidence, recommendation, assigned role, touches) and an append-only event log preserves full history, so continuity is maintained per case. *Partial:* state is in-memory and per-case; persistent storage and cross-case memory (e.g. a patient's prior refills informing triage) are the documented next step. |
+| **Orchestration** | One orchestrator routes every action to the right role, enforces guardrails, and logs it (`orchestrator.py`). *Partial:* EHR, pharmacy, and PBM integrations are mocked behind interfaces a real system would connect to. |
+| **Uncertainty & failure** | Unreadable requests are labelled `unknown` and routed to a human instead of guessing. When two strong signals point to different resolution paths, the request is flagged as a conflict and routed to a human rather than guessing between them. The deterministic classifier is also the fallback if the LLM is disabled. |
+| **Human-in-the-loop** | The clinical decision is gated to the provider role only (no admin override), and resolution requires a second human step: a pharmacist verifies the fill happened. |
+| **Guardrails & verification** | Three guardrails (RBAC on actions, legal-transition checks, low-confidence routing) plus an enforced AI capability allowlist prevent wrong actions. Verification is first-class: `resolved` means a confirmed fill, and a decline is closed separately as `denied`. |
 
 ---
 
