@@ -1,4 +1,4 @@
-# Refill Resolution Engine
+# RX/RE - Refill Resolution Engine
 
 A staff command center that takes a **stuck prescription refill**, understands *why*
 it's stuck, coordinates the right next action, keeps a human in the loop for anything
