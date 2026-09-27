@@ -118,3 +118,11 @@ frontend/src/
 Real Surescripts/EHR/PBM integrations (mocked via seed + channels), a patient-facing app
 (status only), real identity/SSO (faked roles), multi-tenant isolation. All are "next,"
 none are needed to prove the core loop.
+
+## Deployed build (Vercel)
+
+The live demo runs the entire system in the browser: the same state machine, RBAC
+clinical gate, deterministic triage, audit log and metrics are ported to
+`frontend/src/engine.js`, so the app deploys as a static site with no server. The
+Python backend in `/backend` is the reference implementation and exposes the same
+logic over a FastAPI API for local use.

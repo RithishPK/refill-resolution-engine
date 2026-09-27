@@ -1,23 +1,14 @@
-const BASE = "http://localhost:8000";
-
-async function req(path, { method = "GET", body, role = "tech" } = {}) {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: { "Content-Type": "application/json", "X-Role": role },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.detail || "request failed");
-  return data;
-}
+// api.js - same interface the components already use, now backed by the in-browser
+// engine instead of a network call. No backend or localhost required, so the app
+// runs as a static site. See engine.js for the ported backend logic.
+import * as engine from "./engine.js";
 
 export const api = {
-  listCases: () => req("/api/cases"),
-  getCase: (id) => req(`/api/cases/${id}`),
-  metrics: () => req("/api/metrics"),
-  aiPolicy: () => req("/api/ai-policy"),
-  act: (id, action, role, payload = {}) =>
-    req(`/api/cases/${id}/action`, { method: "POST", role, body: { action, payload } }),
-  addCase: (body) => req("/api/cases", { method: "POST", body }),
-  reset: () => req("/api/reset", { method: "POST" }),
+  listCases: async () => engine.listCases(),
+  getCase: async (id) => engine.getCase(id),
+  metrics: async () => engine.metrics(),
+  aiPolicy: async () => engine.aiPolicy(),
+  act: async (id, action, role, payload = {}) => engine.act(id, action, role, payload),
+  addCase: async (body) => engine.addCaseApi(body),
+  reset: async () => engine.reset(),
 };
