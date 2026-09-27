@@ -1,0 +1,4 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+# optional: only used if you set ANTHROPIC_API_KEY and USE_LLM=1
+anthropic==0.34.2
