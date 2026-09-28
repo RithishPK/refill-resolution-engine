@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "./api.js";
 import MetricsBar from "./components/MetricsBar.jsx";
 import Queue from "./components/Queue.jsx";
@@ -17,6 +17,7 @@ export default function App() {
   const [detail, setDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [err, setErr] = useState("");
+  const detailRef = useRef(null);
 
   const refresh = useCallback(async () => {
     const [cs, m] = await Promise.all([api.listCases(), api.metrics()]);
@@ -31,6 +32,9 @@ export default function App() {
     setLoadingDetail(true);
     try { setDetail(await api.getCase(id)); }
     finally { setLoadingDetail(false); }
+    if (window.innerWidth <= 900) {
+      setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+    }
   };
 
   const runAction = async (action, payload) => {
@@ -81,9 +85,11 @@ export default function App() {
           <main className="grid">
             {cases === null ? <QueueSkeleton /> :
               <Queue cases={cases} selectedId={selectedId} onSelect={select} />}
-            {loadingDetail ? <DetailSkeleton /> :
-              detail ? <CaseDetail detail={detail} role={role} onAction={runAction} /> :
-              <section className="empty">Select a refill to see why it is stuck and what to do next.</section>}
+            <div className="detail-col" ref={detailRef}>
+              {loadingDetail ? <DetailSkeleton /> :
+                detail ? <CaseDetail detail={detail} role={role} onAction={runAction} /> :
+                <section className="empty">Select a refill to see why it is stuck and what to do next.</section>}
+            </div>
           </main>
         </>
       )}
